@@ -1,5 +1,6 @@
 package com.example.springbootjwtexample.auth;
 
+import com.example.springbootjwtexample.security.SecurityConfig;
 import com.example.springbootjwtexample.util.auth.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -11,13 +12,13 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.web.authentication.WebAuthenticationDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Component
 @RequiredArgsConstructor
@@ -44,11 +45,26 @@ public class JwtFilter extends OncePerRequestFilter {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             List<? extends GrantedAuthority> roles = (List<? extends GrantedAuthority>) userDetails.getAuthorities();
             if (jwtUtil.tokenControl(jwtToken)) {
-                var authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, userDetails.getAuthorities());
+                var authenticationToken = new UsernamePasswordAuthenticationToken(userDetails,null, roles);
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             }
         }
         filterChain.doFilter(request, response);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+
+        String path = request.getRequestURI();
+        String[] allowedPaths = SecurityConfig.PUBLIC_REQUEST_MATCHERS;
+        for (var allowedPath : allowedPaths) {
+            allowedPath = allowedPath.replace("/*", "");
+            allowedPath = allowedPath.replace("/**", "");
+            if (path.contains(allowedPath)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

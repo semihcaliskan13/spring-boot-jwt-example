@@ -13,6 +13,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
+import java.text.ParseException;
+
 @Service
 public class AuthServiceImpl implements AuthService {
 
@@ -30,14 +32,14 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginPayload loginPayload) {
         String username = loginPayload.getUsername();
         var authentication = new UsernamePasswordAuthenticationToken(username,loginPayload.getPassword());
-        authenticationManager.authenticate(authentication);
+        var auth = authenticationManager.authenticate(authentication);
         return generateToken(username);
     }
 
     private LoginResponse generateToken(String username) {
 
         User user = userService.getUserByUsername(username);
-        var userCredentials = new UserCredential();
+        UserCredential userCredentials = new UserCredential();
         BeanUtils.copyProperties(user,userCredentials);
         CustomUserDetails userDetails = new CustomUserDetails(userCredentials);
         String token = jwtUtil.generateToken(userDetails);

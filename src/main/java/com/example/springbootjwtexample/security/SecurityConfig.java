@@ -23,12 +23,18 @@ public class SecurityConfig {
     private final AuthenticationProvider authenticationProvider;
     private final JwtFilter jwtFilter;
 
+    public final static String[] PUBLIC_REQUEST_MATCHERS = {"/api-docs/**", "swagger-ui/**","login/**"};
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .sessionManagement((sessionManagement) -> sessionManagement.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/**").permitAll())
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/login/**").permitAll()
+                        //.requestMatchers("/users").hasRole("admin")
+                        .requestMatchers("/users/{id}").authenticated()
+                        .requestMatchers("/login/**").permitAll()
+                        .requestMatchers("/swagger-ui/**").permitAll())
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 

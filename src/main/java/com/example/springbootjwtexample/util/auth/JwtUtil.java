@@ -18,6 +18,10 @@ import org.springframework.util.StringUtils;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.function.Function;
@@ -30,7 +34,7 @@ public class JwtUtil {
     private String SECRET_KEY;
 
     @Value("${spring.security.jwt.expiration}")
-    private String jwtExpiration;
+    private String JWT_EXPIRATION;
 
     public String findUsername(String token) {
         return exportToken(token, Claims::getSubject);
@@ -62,14 +66,20 @@ public class JwtUtil {
         }
     }
 
-    public String generateToken(UserDetails user) {
-        Date now = new Date();
-        Date validity = new Date(now.getTime() + jwtExpiration);
+    public String generateToken(UserDetails user)  {
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime validity = now.plusSeconds(Integer.parseInt(JWT_EXPIRATION));
+
+        Date issuedAt = Date.from(now.atZone(ZoneId.systemDefault()).toInstant());
+        Date expiration = Date.from(validity.atZone(ZoneId.systemDefault()).toInstant());
+
         return Jwts.builder()
                 .setClaims(new HashMap<>())
                 .setSubject(user.getUsername())
-                .setIssuedAt(now)
-                .setExpiration(validity)
+                .setIssuer("https://lonerland.com")
+                .setAudience("lonerland")
+                .setIssuedAt(issuedAt)
+                .setExpiration(expiration)
                 .signWith(getKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
