@@ -17,7 +17,10 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 @Component
@@ -45,7 +48,7 @@ public class JwtFilter extends OncePerRequestFilter {
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
             List<? extends GrantedAuthority> roles = (List<? extends GrantedAuthority>) userDetails.getAuthorities();
             if (jwtUtil.tokenControl(jwtToken)) {
-                var authenticationToken = new UsernamePasswordAuthenticationToken(userDetails,null, roles);
+                var authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, roles);
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
             }
@@ -53,18 +56,15 @@ public class JwtFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    @Override
-    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-
-        String path = request.getRequestURI();
-        String[] allowedPaths = SecurityConfig.PUBLIC_REQUEST_MATCHERS;
-        for (var allowedPath : allowedPaths) {
-            allowedPath = allowedPath.replace("/*", "");
-            allowedPath = allowedPath.replace("/**", "");
-            if (path.contains(allowedPath)) {
-                return true;
-            }
-        }
-        return false;
-    }
+//    @Override
+//    protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
+//
+//        String path = request.getRequestURI();
+//        String[] allowedPaths = SecurityConfig.PUBLIC_REQUEST_MATCHERS;
+//        ArrayList<String> allowedPathsMapping = new ArrayList<>();
+//
+//        Arrays.stream(allowedPaths).map(a -> allowedPathsMapping.add(a.replace("/**", ""))).toList();
+//        boolean result = allowedPathsMapping.stream().anyMatch(path::startsWith);
+//        return result;
+//    }
 }
